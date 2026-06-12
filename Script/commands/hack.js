@@ -3,69 +3,122 @@ const fs = require("fs-extra");
 const path = require("path");
 
 module.exports.config = {
-  name: "hack",
-  version: "1.0.0",
-  credits: "SHAHADAT SAHU",
-  description: "Generate a couple banner image using sender and target Facebook UID via Avatar Canvas API",
-  commandCategory: "banner",
-  usePrefix: true,
-  usages: "[@mention | reply]"
+name: "hack",
+version: "1.0.1",
+credits: "RUDRO",
+description: "Generate hack banner image",
+commandCategory: "banner",
+usePrefix: true,
+usages: "[@mention | reply]",
+cooldowns: 5
 };
 
 module.exports.run = async function ({ event, api }) {
-  const { threadID, messageID, senderID, mentions, messageReply } = event;
+const {
+threadID,
+messageID,
+senderID
+} = event;
 
-  let targetID = null;
+let targetID = null;
 
-  if (mentions && Object.keys(mentions).length > 0) {
-    targetID = Object.keys(mentions)[0];
-  } else if (messageReply && messageReply.senderID) {
-    targetID = messageReply.senderID;
+if (
+event.mentions &&
+Object.keys(event.mentions).length > 0
+) {
+targetID = Object.keys(event.mentions)[0];
+} else if (
+event.messageReply &&
+event.messageReply.senderID
+) {
+targetID = event.messageReply.senderID;
+}
+
+if (!targetID) {
+return api.sendMessage(
+"Please reply or mention someone......",
+threadID,
+messageID
+);
+}
+
+try {
+
+const apiList = await axios.get(
+  "https://raw.githubusercontent.com/shahadat-sahu/SAHU-API/refs/heads/main/SAHU-API.json"
+);
+
+const AVATAR_CANVAS_API =
+  apiList?.data?.AvatarCanvas;
+
+if (!AVATAR_CANVAS_API) {
+  return api.sendMessage(
+    "❌ API Error!\n☎️ Call Boss RUDRO",
+    threadID,
+    messageID
+  );
+}
+
+const res = await axios.post(
+  `${AVATAR_CANVAS_API}/api`,
+  {
+    cmd: "hack",
+    senderID,
+    targetID
+  },
+  {
+    responseType: "arraybuffer",
+    timeout: 30000
   }
+);
 
-  if (!targetID) {
-    return api.sendMessage("Please reply or mention someone......", threadID, messageID);
-  }
+const cacheDir = path.join(
+  __dirname,
+  "cache"
+);
 
-  try {
-    const apiList = await axios.get(
-      "https://raw.githubusercontent.com/shahadat-sahu/SAHU-API/refs/heads/main/SAHU-API.json"
-    );
+if (!fs.existsSync(cacheDir)) {
+  fs.mkdirSync(cacheDir, {
+    recursive: true
+  });
+}
 
-    const AVATAR_CANVAS_API = apiList.data.AvatarCanvas;
+const imgPath = path.join(
+  cacheDir,
+  `hack_${senderID}_${targetID}.png`
+);
 
-    const res = await axios.post(
-      `${AVATAR_CANVAS_API}/api`,
-      {
-        cmd: "hack",
-        senderID,
-        targetID
-      },
-      {
-        responseType: "arraybuffer",
-        timeout: 30000
-      }
-    );
+fs.writeFileSync(
+  imgPath,
+  Buffer.from(res.data)
+);
 
-    const imgPath = path.join(
-      __dirname,
-      "cache",
-      `hack_${senderID}_${targetID}.png`
-    );
+return api.sendMessage(
+  {
+    body: "তোর আইডি হ্যাক করা হলো ✅",
+    attachment: fs.createReadStream(imgPath)
+  },
+  threadID,
+  () => {
+    if (fs.existsSync(imgPath)) {
+      fs.unlinkSync(imgPath);
+    }
+  },
+  messageID
+);
 
-    fs.writeFileSync(imgPath, res.data);
+} catch (error) {
 
-    return api.sendMessage(
-      {
-        body: "তোর আইডি হ্যাক করা হলো ✅",
-        attachment: fs.createReadStream(imgPath)
-      },
-      threadID,
-      () => fs.unlinkSync(imgPath),
-      messageID
-    );
+console.error(
+  "HACK CMD ERROR:",
+  error.response?.data || error.message
+);
 
-  } catch (e) {
-    return api.sendMessage("API Error Call Boss SAHU", threadID, messageID);
-  }
+return api.sendMessage(
+  "❌ API Error!\n☎️ Call Boss RUDRO",
+  threadID,
+  messageID
+);
+
+}
 };

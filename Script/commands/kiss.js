@@ -90,7 +90,7 @@ module.exports.run = async function ({ event, api }) {
 
   } catch {
     return api.sendMessage(
-      "API Error Call Boss SAHU",
+      "API Error Call Boss Rudro",
       threadID,
       messageID
     );

@@ -1,73 +1,130 @@
+const axios = require("axios");
+const fs = require("fs-extra");
+const path = require("path");
+
 module.exports.config = {
-  name: "toilet",
-  version: "1.0.0",
-  credits: "SHAHADAT SAHU",
-  description: "Generate a couple banner image using sender and target Facebook UID via Avatar Canvas API",
-  commandCategory: "banner",
-  usePrefix: true,
-  usages: "[@mention | reply]",
-  cooldowns: 5
+name: "toilet",
+version: "1.0.1",
+credits: "SHAHADAT SAHU",
+description: "Generate a toilet banner image",
+commandCategory: "banner",
+usePrefix: true,
+usages: "[@mention | reply]",
+cooldowns: 5
 };
 
-module.exports.run = async function ({ api, event, args, Currencies }) {
-  const axios = require("axios");
-  const fs = require("fs-extra");
-  const path = require("path");
+module.exports.run = async function ({
+api,
+event,
+Currencies
+}) {
+try {
 
-  try {
-    const apiList = await axios.get(
-      "https://raw.githubusercontent.com/shahadat-sahu/SAHU-API/refs/heads/main/SAHU-API.json"
-    );
+let targetID = null;
 
-    const AVATAR_CANVAS_API = apiList.data.AvatarCanvas;
+if (event.type === "message_reply") {
+  targetID = event.messageReply.senderID;
+} else if (
+  event.mentions &&
+  Object.keys(event.mentions).length > 0
+) {
+  targetID = Object.keys(event.mentions)[0];
+}
 
-    const mentions = event.mentions;
-    const messageReply = event.messageReply;
+if (!targetID) {
+  return api.sendMessage(
+    "Please reply to or mention someone.",
+    event.threadID,
+    event.messageID
+  );
+}
 
-    let targetID = null;
+const senderID = event.senderID;
 
-    if (mentions && Object.keys(mentions).length > 0) {
-      targetID = Object.keys(mentions)[0];
-    } else if (messageReply && messageReply.senderID) {
-      targetID = messageReply.senderID;
-    }
-
-    if (!targetID) {
-      return api.sendMessage("Please reply or mention someone......", event.threadID, event.messageID);
-    }
-
-    const senderID = event.senderID;
-
+try {
+  if (
+    Currencies &&
+    typeof Currencies.increaseMoney === "function"
+  ) {
     const randomPercent = Math.floor(Math.random() * 101);
-    const randomAmount = Math.floor(Math.random() * 100000) + 100000;
-    await Currencies.increaseMoney(senderID, parseInt(randomPercent * randomAmount));
+    const randomAmount =
+      Math.floor(Math.random() * 100000) + 100000;
 
-    const res = await axios.post(
-      `${AVATAR_CANVAS_API}/api`,
-      {
-        cmd: "toilet",
-        uid: targetID
-      },
-      {
-        responseType: "arraybuffer",
-        timeout: 30000
-      }
+    await Currencies.increaseMoney(
+      senderID,
+      randomPercent * randomAmount
     );
-
-    const imgPath = path.join(__dirname, "cache", `toilet_${targetID}.png`);
-    fs.writeFileSync(imgPath, res.data);
-
-    return api.sendMessage(
-      {
-        body: "বেশি বাল পাকলামির জন্য তোরে টয়লেটে ফেলে দিলাম🤣🤮",
-        attachment: fs.createReadStream(imgPath)
-      },
-      event.threadID,
-      () => fs.unlinkSync(imgPath),
-      event.messageID
-    );
-
-  } catch (e) {
-    return api.sendMessage("API Error Call Boss SAHU", event.threadID, event.messageID);
   }
+} catch (err) {
+  console.log("Currency Error:", err);
+}
+
+const apiList = await axios.get(
+  "https://raw.githubusercontent.com/shahadat-sahu/SAHU-API/refs/heads/main/SAHU-API.json"
+);
+
+const AVATAR_CANVAS_API = apiList?.data?.AvatarCanvas;
+
+if (!AVATAR_CANVAS_API) {
+  return api.sendMessage(
+    "❌ API Error!\n☎️ Call Boss RUDRO",
+    event.threadID,
+    event.messageID
+  );
+}
+
+const res = await axios.post(
+  `${AVATAR_CANVAS_API}/api`,
+  {
+    cmd: "toilet",
+    uid: targetID
+  },
+  {
+    responseType: "arraybuffer",
+    timeout: 30000
+  }
+);
+
+const cacheDir = path.join(__dirname, "cache");
+
+if (!fs.existsSync(cacheDir)) {
+  fs.mkdirSync(cacheDir, {
+    recursive: true
+  });
+}
+
+const imgPath = path.join(
+  cacheDir,
+  `toilet_${targetID}.png`
+);
+
+fs.writeFileSync(
+  imgPath,
+  Buffer.from(res.data)
+);
+
+return api.sendMessage(
+  {
+    body: "বেশি বাল পাকলামির জন্য তোরে টয়লেটে ফেলে দিলাম 🤣🤮",
+    attachment: fs.createReadStream(imgPath)
+  },
+  event.threadID,
+  () => {
+    if (fs.existsSync(imgPath)) {
+      fs.unlinkSync(imgPath);
+    }
+  },
+  event.messageID
+);
+
+} catch (error) {
+console.error("TOILET CMD ERROR:", error);
+
+return api.sendMessage(
+  "❌ API Error!\n☎️ Call Boss RUDRO",
+  event.threadID,
+  event.messageID
+);
+
+}
 };

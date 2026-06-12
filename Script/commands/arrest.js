@@ -4,18 +4,18 @@ const path = require("path");
 
 module.exports.config = {
   name: "arrest",
-  version: "1.0.0",
+  version: "1.0.1",
   hasPermssion: 0,
-  credits: "SHAHADAT SAHU",
-  description: "Generate scooby-doo meme using sender and target Facebook UID via Avatar Canvas API",
+  credits: "RUDRO",
+  description: "Generate chor meme using sender and target UID",
   commandCategory: "fun",
   usePrefix: true,
   usages: "[@mention | reply]",
   cooldowns: 5,
   dependencies: {
-    "axios": "",
+    axios: "",
     "fs-extra": "",
-    "path": ""
+    path: ""
   }
 };
 
@@ -23,27 +23,44 @@ module.exports.run = async function ({ event, api }) {
   const { threadID, messageID, senderID, mentions, messageReply } = event;
 
   let targetID = null;
+  let tag = "";
 
   if (mentions && Object.keys(mentions).length > 0) {
     targetID = Object.keys(mentions)[0];
+    tag = mentions[targetID];
   } else if (messageReply && messageReply.senderID) {
     targetID = messageReply.senderID;
+    tag = "Reply User";
   }
 
   if (!targetID) {
     return api.sendMessage(
-      "Please reply or mention someone......",
+      "Please reply to or mention someone.",
       threadID,
       messageID
     );
   }
 
   try {
+    const cachePath = path.join(__dirname, "cache");
+
+    if (!fs.existsSync(cachePath)) {
+      fs.mkdirSync(cachePath, { recursive: true });
+    }
+
     const apiList = await axios.get(
-      "https://raw.githubusercontent.com/shahadat-sahu/SAHU-API/refs/heads/main/SAHU-API.json"
+      "https://raw.githubusercontent.com/shahadat-sahu/SAHU-API/main/SAHU-API.json"
     );
 
-    const AVATAR_CANVAS_API = apiList.data.AvatarCanvas;
+    const AVATAR_CANVAS_API = apiList?.data?.AvatarCanvas;
+
+    if (!AVATAR_CANVAS_API) {
+      return api.sendMessage(
+        "AvatarCanvas API not found.",
+        threadID,
+        messageID
+      );
+    }
 
     const res = await axios.post(
       `${AVATAR_CANVAS_API}/api`,
@@ -59,8 +76,7 @@ module.exports.run = async function ({ event, api }) {
     );
 
     const imgPath = path.join(
-      __dirname,
-      "cache",
+      cachePath,
       `chor_${senderID}_${targetID}.png`
     );
 
@@ -68,17 +84,20 @@ module.exports.run = async function ({ event, api }) {
 
     return api.sendMessage(
       {
-        body: `হালা মুরগী চোর তোরে আজকে হাতে নাতে ধরছি পালাবি কই 😹🕵️‍♂️\n=> ${tag}`,
+        body: `হালা মুরগী চোর 😹🕵️‍♂️\n=> ${tag}`,
         attachment: fs.createReadStream(imgPath)
       },
       threadID,
-      () => fs.unlinkSync(imgPath),
+      () => {
+        if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
+      },
       messageID
     );
+  } catch (err) {
+    console.log(err);
 
-  } catch (e) {
     return api.sendMessage(
-      "API Error Call Boss SAHU",
+      `API Error:\n${err.message}`,
       threadID,
       messageID
     );

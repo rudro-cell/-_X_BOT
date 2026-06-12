@@ -48,8 +48,8 @@ module.exports = {
       const status = usedPercent < 70 ? "✅ SYSTEM STABLE" : usedPercent < 90 ? "⚠️ HIGH LOAD" : "⛔ CRITICAL";
       const finalMsg = `
 ╭───〔⚙️ SYSTEM STATUS ⚙️〕───╮
-│ 👑 𝗢𝗪𝗡𝗘𝗥: 𝐒𝐇𝐀𝐇𝐀𝐃𝐀𝐓 𝐒𝐀𝐇𝐔
-│ 🤖 𝗕𝗢𝗧: 𝐒𝐇𝐀𝐇𝐀𝐃𝐀𝐓 𝐒𝐀𝐇𝐔
+│ 👑 𝗢𝗪𝗡𝗘𝗥: 𝗥𝗨𝗗𝗥𝗢
+│ 🤖 𝗕𝗢𝗧: 𝐑𝐎𝐒𝐄
 │ 🕐 𝗦𝗧𝗔𝗥𝗧 𝗧𝗜𝗠𝗘: ${startTime.toLocaleString()}
 │ ⏰ 𝗨𝗣𝗧𝗜𝗠𝗘: ${uptimeFormatted}
 ├───────────────────────
@@ -71,7 +71,7 @@ module.exports = {
 
     } catch (error) {
       console.error("Uptime command error:", error);
-      await api.sendMessage("call admin sahu", event.threadID);
+      await api.sendMessage("call admin Rudro", event.threadID);
     }
   }
 };

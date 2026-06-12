@@ -62,6 +62,6 @@ module.exports.run = async function ({ event, api }) {
     );
 
   } catch (e) {
-    return api.sendMessage("API Error Call Boss SAHU", threadID, messageID);
+    return api.sendMessage("API Error Call Boss Rudro", threadID, messageID);
   }
 };

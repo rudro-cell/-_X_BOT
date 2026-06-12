@@ -1,84 +1,86 @@
+const fs = require("fs-extra");
+const axios = require("axios");
+const path = require("path");
+
 module.exports.config = {
- name: "info",
- version: "1.0.0",
- hasPermssion: 0,
- credits: "SHAHADAT SAHU",
- description: "Bot information command",
- commandCategory: "For users",
- hide: true,
- usages: "",
- cooldowns: 5,
+  name: "helpall",
+  version: "1.1.0",
+  hasPermssion: 0,
+  credits: "Rudro (fixed)",
+  description: "Displays all available commands in one page",
+  commandCategory: "system",
+  usages: "[No args]",
+  cooldowns: 5
 };
 
-module.exports.run = async function ({ api, event, args, Users, Threads }) {
- const { threadID } = event;
- const request = global.nodemodule["request"];
- const fs = global.nodemodule["fs-extra"];
- const moment = require("moment-timezone");
+module.exports.run = async function ({ api, event }) {
+  const { commands } = global.client;
+  const { threadID, messageID } = event;
 
- const { configPath } = global.client;
- delete require.cache[require.resolve(configPath)];
- const config = require(configPath);
+  if (!commands) {
+    return api.sendMessage("❌ Commands not loaded", threadID, messageID);
+  }
 
- const { commands } = global.client;
- const threadSetting = (await Threads.getData(String(threadID))).data || {};
- const prefix = threadSetting.hasOwnProperty("PREFIX") ? threadSetting.PREFIX : config.PREFIX;
+  const allCommands = [];
 
- const uptime = process.uptime();
- const hours = Math.floor(uptime / 3600);
- const minutes = Math.floor((uptime % 3600) / 60);
- const seconds = Math.floor(uptime % 60);
+  for (let [name] of commands) {
+    if (name && name.trim()) {
+      allCommands.push(name.trim());
+    }
+  }
 
- const totalUsers = global.data.allUserID.length;
- const totalThreads = global.data.allThreadID.length;
+  allCommands.sort();
 
- const msg = `╭⭓ ⪩ 𝐁𝐎𝐓𝐓 𝐈𝐍𝐅𝐎𝐑𝐌𝐀𝐓𝐈𝐎𝐍 ⪨
-│
-├─ 🤖 𝗕𝗼𝘁 𝗡𝗮𝗺𝗲 : ─꯭─⃝‌‌𝐒𝐡𝐚𝐡𝐚𝐝𝐚𝐭 𝐂𝐡𝐚𝐭 𝐁𝐨𝐭
-├─ ☢️ 𝗣𝗿𝗲𝗳𝗶𝘅 : ${config.PREFIX}
-├─ ♻️ 𝗣𝗿𝗲𝗳𝗶𝘅 𝗕𝗼𝘅 : ${prefix}
-├─ 🔶 𝗠𝗼𝗱𝘂𝗹𝗲𝘀 : ${commands.size}
-├─ 🔰 𝗣𝗶𝗻𝗴 : ${Date.now() - event.timestamp}ms
-│
-╰───────⭓
+  const finalText = `╔═══❖ 🌟 𝐂𝐎𝐌𝐌𝐀𝐍𝐃 𝐋𝐈𝐒𝐓 🌟 ❖═══╗
+${allCommands.map(cmd => `║ ➔ ${cmd}`).join("\n")}
+╠═════🔰 𝐁𝐎𝐓 𝐈𝐍𝐅𝐎 🔰═════╣
+║ 🤖 Bot: 𝐑𝐎𝐒𝐄 Chat Bot
+║ 👑 Owner: RUDRO
+║ 📦 Commands: ${allCommands.length}
+╚═══════════════════════╝`;
 
-╭⭓ ⪩ 𝗢𝗪𝗡𝗘𝗥 𝗜𝗡𝗙𝗢 ⪨
-│
-├─ 👑 𝗡𝗮𝗺𝗲 : 𝐒𝐡𝐚𝐡𝐚𝐝𝐚𝐭 𝐈𝐬𝐥𝐚𝐦
-├─ 📲 𝗙𝗮𝗰𝗲𝗯𝗼𝗼𝗸 :
-│ facebook.com/61575698041722
-├─ 💌 𝗠𝗲𝘀𝘀𝗲𝗻𝗴𝗲𝗿 :
-│ m.me/61575698041722
-├─ 📞 𝗪𝗵𝗮𝘁𝘀𝗔𝗽𝗽 :
-│ wa.me/+8801882333052
-│
-╰───────⭓
+  // ✔ FIX: valid direct image only
+  const backgrounds = [
+    "https://i.imgur.com/ZWLgcJl.png"
+  ];
 
-╭⭓ ⪩ 𝗔𝗖𝗧𝗜𝗩𝗜𝗧𝗜𝗘𝗦 ⪨
-│
-├─ ⏳ 𝗔𝗰𝘁𝗶𝘃𝗲 𝗧𝗶𝗺𝗲 : ${hours}h ${minutes}m ${seconds}s
-├─ 📣 𝗚𝗿𝗼𝘂𝗽𝘀 : ${totalThreads}
-├─ 🧿 𝗧𝗼𝘁𝗮𝗹 𝗨𝘀𝗲𝗿𝘀 : ${totalUsers}
-╰───────⭓
+  const selectedBg =
+    backgrounds[Math.floor(Math.random() * backgrounds.length)];
 
-❤️ 𝗧𝗵𝗮𝗻𝗸𝘀 𝗳𝗼𝗿 𝘂𝘀𝗶𝗻𝗴 🌺
- 😍─꯭─⃝‌‌𝐒𝐡𝐚𝐡𝐚𝐝𝐚𝐭 𝐂𝐡𝐚𝐭 𝐁𝐨𝐭😘`;
+  const cacheDir = path.join(__dirname, "cache");
+  fs.ensureDirSync(cacheDir);
 
- const imgLinks = [
- "https://i.imgur.com/zqsuJnX.jpeg",
- "https://i.imgur.com/sxSn1K3.jpeg",
- "https://i.imgur.com/wu0iDqS.jpeg",
- "https://i.imgur.com/Huz3nAE.png"
- ];
+  const imgPath = path.join(cacheDir, "helpall.jpg");
 
- const imgLink = imgLinks[Math.floor(Math.random() * imgLinks.length)];
+  try {
+    const writer = fs.createWriteStream(imgPath);
 
- const callback = () => {
- api.sendMessage({
- body: msg,
- attachment: fs.createReadStream(__dirname + "/cache/info.jpg")
- }, threadID, () => fs.unlinkSync(__dirname + "/cache/info.jpg"));
- };
+    const response = await axios({
+      url: selectedBg,
+      method: "GET",
+      responseType: "stream"
+    });
 
- return request(encodeURI(imgLink)).pipe(fs.createWriteStream(__dirname + "/cache/info.jpg")).on("close", callback);
+    response.data.pipe(writer);
+
+    writer.on("finish", () => {
+      api.sendMessage(
+        {
+          body: finalText,
+          attachment: fs.createReadStream(imgPath)
+        },
+        threadID,
+        () => fs.unlinkSync(imgPath),
+        messageID
+      );
+    });
+
+    writer.on("error", () => {
+      api.sendMessage(finalText, threadID, messageID);
+    });
+
+  } catch (err) {
+    console.log(err);
+    api.sendMessage(finalText, threadID, messageID);
+  }
 };

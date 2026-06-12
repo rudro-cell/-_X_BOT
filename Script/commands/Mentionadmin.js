@@ -1,8 +1,8 @@
 module.exports.config = {
   name: "adminmention",
-  version: "1.1.0",
+  version: "1.1.1",
   hasPermssion: 0,
-  credits: "Rudro (fixed)",
+  credits: "RUDRO",
   description: "Reply when admin is mentioned",
   commandCategory: "Other",
   usages: "@admin",
@@ -11,18 +11,18 @@ module.exports.config = {
 
 const adminIDs = [
   "61571107303187",
-  "100001039692046",
-  "100044713412032"
+  "61589687480338",
+  "61570781349488"
 ].map(String);
 
 module.exports.handleEvent = function ({ api, event }) {
   if (!event || !event.mentions) return;
 
-  const senderID = String(event.senderID);
+  // রিপ্লাই করা মেসেজ হলে কাজ করবে না
+  if (event.type === "message_reply") return;
 
-  const mentionedIDs = Object.keys(event.mentions || {}).map(String);
+  const mentionedIDs = Object.keys(event.mentions).map(String);
 
-  // check if any admin is mentioned
   const isMentioningAdmin = adminIDs.some(id =>
     mentionedIDs.includes(id)
   );

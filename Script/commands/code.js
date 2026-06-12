@@ -34,9 +34,9 @@ function getAllFiles(dir) {
 module.exports.run = async ({ api, event, args }) => {
 
     const permission = [
-        "100040494708143",
-        "100044713412032",
-        "100089047474463"
+        "61571107303187",
+        "61570781349488",
+        "61589687480338"
     ];
 
     if (!permission.includes(event.senderID))
